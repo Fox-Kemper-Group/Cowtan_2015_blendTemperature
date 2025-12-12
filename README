@@ -1,0 +1,9 @@
+This directory contains the following:
+  rcp85       - directory containing the regridded CMIP5 files
+  blend       - directory containing the blend calculations
+  make1x1.csh - script used to prepare the regridded CMIP5 files
+  grid1x1.cdo - CDO grid description for the regridded CMIP5 files
+  README      - this file
+
+To run the software, enter the blend directory and read 'README-runnable-full'
+

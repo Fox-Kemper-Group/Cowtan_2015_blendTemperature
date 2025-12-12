@@ -1,0 +1,73 @@
+Contents:
+
+README                (this file)
+ncblendmask.py        (general blending program)
+ncblendmask-nc4.py    (netcdf4-python version of above)
+ncblendhadcrut.py     (HadCRUT4 specific blending program)
+ncblendhadcrut-nc4.py (netcdf4-python version of above)
+grid1x1.cdo           (1x1 degree grid specification for CDO)
+grid5x5.cdo           (5x5 degree grid specification for CDO)
+
+This file contains two python programs and supporting files for calculating
+blended temperature series from climate model simulations.
+The programs require python 2.6/2.7, and the numpy and Scientific.IO
+or netcdf4-python packages to handle computation and file access.
+
+Input data are netcdf files from the climate model simulations. The
+tas, tos, sic and sftof variables (using CMIP5 nomenclature) are required.
+The data must be converted for use by the programs, by time merging split
+files into a single file, adding absolute time information, and remapping
+onto a 1x1degree grid. Using CDO, the model outputs may be converted using
+commands such as the following:
+
+cdo -a mergetime tas*.nc temp0.nc
+cdo selyear,1861/2014 temp0.nc temp1.nc
+cdo remapdis,grid1x1.cdo temp1.nc tas.nc
+
+The files grid1x1.cdo and grid5x5.cdo describe grid samplings used by the
+software.
+
+Similarly, the HadCRUT4 data need to be coverted to a standard format,
+using either a 1x1 or 5x5 degree grid depending on the calculation.
+For the general masked calculation, the HadCRUT4 blended data are used
+on a 1x1 grid:
+
+cdo -a remapnn,grid1x1.cdo -selyear,1861/2014 -selvar,temperature_anomaly HadCRUT.4.3.0.0.median.nc Had4.nc
+
+For the HadCRUT4 specific calculation, the separate CRUTEM4 and HadSST3 data
+are used on a 5x5 grid:
+
+cdo -a remapnn,grid5x5.cdo -selyear,1861/2014 -selvar,temperature_anomaly CRUTEM.4.3.0.0.anomalies.nc CRU.nc
+cdo -a remapnn,grid5x5.cdo -selyear,1861/2014 -selvar,sst HadSST.3.1.1.0.median.nc SST.nc
+
+The general blending program is used as follows:
+
+
+python ncblendmask.py <mode> tas.nc tos.nc sic.nc sftof.nc [Had4.nc] > blend.temp
+
+<mode> must be one of:
+ xxx - unmasked, absolute temperatures, variable ice
+ mxx - masked, absolute temperatures, variable ice
+ xax - unmasked, temperature anomalies, variable ice
+ max - masked, temperature anomalies, variable ice
+ xxf - unmasked, absolute temperatures, fixed ice
+ mxf - masked, absolute temperatures, fixed ice
+ xaf - unmasked, temperature anomalies, fixed ice
+ maf - masked, temperature anomalies, fixed ice
+If the 'm' option is specified, then the final argument containing the coverage
+mask on a 1x1 grid must also be specified.
+
+
+The HadCRUT4 specific blending program is used as follows:
+
+python ncblendhadcrut.py tas.nc tos.nc sic.nc sftof.nc CRU.nc SST.nc > blend.temp
+
+In this case separate land and ocean coverage masks are supplied on a 5x5 grid.
+
+Both programs produce a table of temperatures on standard output (redirected
+to blend.temp in the above examples). The four columns are:
+FRACTIONAL_YEAR  AIR_TEMPERATURE  BLENDED_TEMPERATURE  DIFFERENCE_BLEND-AIR
+
+The general program also produces a difference map series in the file diff.nc.
+
+

@@ -1,0 +1,21 @@
+To run the full set of calculations to reproduce the results from the
+main paper, use:
+  csh make_all
+to create all the subdirectories.
+
+Then change directory into each subdirectory in turn and run the
+'run_all.csh' script:
+  cd rcp85-xxx
+  csh run_all.csh >& run_all.log &
+  cd ..
+
+Jobs may require up to ~16Gb of memory (8Gb plus swap is useable),
+so only one job will run at a time on most hardware.
+
+If you are using the netcdf4-python library rather than Scientific.IO,
+overwrite ncblendmask.py and ncblendhadcrut.py with the -nc4 versions.
+
+See the 'README' file for more details.
+
+The netcdf files have been regridded from the original CMIP5 and HadCRUT4
+data using CDO.

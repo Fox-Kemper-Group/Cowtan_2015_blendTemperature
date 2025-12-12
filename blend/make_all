@@ -1,0 +1,26 @@
+# UNMASKED
+foreach name (xxx xax xxf xaf)
+mkdir rcp85-$name
+cp makemean.csh makeplots.csh makemaps.csh *.py *.cdo rcp85-$name
+sed "s/xxx/$name/" run_all.csh > rcp85-$name/run_all.csh
+end
+
+# UNMASKED WITH MAPS
+foreach name (xxx xax)
+mkdir rcp85-$name-maps
+cp makemean.csh makeplots.csh makemaps.csh *.py *.cdo rcp85-$name-maps
+sed "s/xxx/$name/" run_all.csh | sed 's/#mv/mv/' > rcp85-$name-maps/run_all.csh
+end
+
+# MASKED
+foreach name (mxx max mxf maf)
+mkdir rcp85-$name
+cp makemean.csh makeplots.csh makemaps.csh *.py *.cdo HadCRUT*.zip rcp85-$name
+sed "s/xxx/$name/" run_all_mask.csh > rcp85-$name/run_all.csh
+end
+
+# HadCRUT4
+set name = had4
+mkdir rcp85-$name
+cp makemean.csh makeplots.csh makemaps.csh *.py *.cdo HadSST*.zip CRUTEM*.zip rcp85-$name
+cp run_all_had4.csh rcp85-$name/run_all.csh
