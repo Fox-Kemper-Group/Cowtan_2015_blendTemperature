@@ -1,4 +1,7 @@
-import sys, math, numpy
+import sys
+
+import math
+import numpy
 
 
 # read map data
@@ -9,7 +12,7 @@ def read_map( lines ):
     if len(lines[i].split()) == len(lines[0].split()):
       nlat = i-1
       break
-  print >> sys.stderr, "Lat ", nlat
+  print("Lat ", nlat, file=sys.stderr)
   # get data
   data = []
   for k in range(0,len(lines),nlat+1):
@@ -105,4 +108,4 @@ nmonths = len(maps)
 
 trmap = trend( maps, date11, date21, nmin1 )
 
-for l in write_map( 0, 0, trmap ): print l,
+for l in write_map( 0, 0, trmap ): print(l, end="")

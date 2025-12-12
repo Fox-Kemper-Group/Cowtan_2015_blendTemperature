@@ -1,4 +1,6 @@
-import sys, numpy
+import sys
+
+import numpy
 cols = 4*[[228,26,28],
           [55,126,184],
           [77,175,74],
@@ -22,7 +24,7 @@ for f in sys.argv[1:]:
   m.append( f.split('_')[1] )
 
 mlist = sorted(list(set(m)))
-print mlist, len(mlist)
+print(mlist, len(mlist))
 
 import matplotlib.pyplot as plt
 plt.xlim([int(min(x)-1),int(max(x)+1)])

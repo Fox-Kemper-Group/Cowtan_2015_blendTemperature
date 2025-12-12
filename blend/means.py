@@ -1,29 +1,34 @@
-import sys, numpy, re
+import sys
+
+import numpy
 
 files = []
-for i in range(1,len(sys.argv)):
+for i in range(1, len(sys.argv)):
   files.append(open(sys.argv[i]))
 
-while(1):
+while True:
   vals = []
-  for i in range(len(files)):
-    l = files[i].readline()
+  l = None
+  for handle in files:
+    l = handle.readline()
+    row = []
     if l:
-      row = []
       try:
         for x in l.split():
           row.append(float(x))
-      except:
+      except Exception:
         pass
     vals.append(row)
-  if not l: break
+  if not l:
+    break
   avals = numpy.array(vals)
-  means = numpy.mean( avals, axis=0 )
+  means = numpy.mean(avals, axis=0)
   types = l.split()
+  out = []
   for i in range(len(means)):
     if "." in types[i]:
-      print means[i],
+      out.append(str(means[i]))
     else:
-      print int(means[i]),
-  print
+      out.append(str(int(means[i])))
+  print(" ".join(out))
 

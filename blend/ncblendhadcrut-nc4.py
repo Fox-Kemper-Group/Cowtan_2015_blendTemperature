@@ -5,8 +5,12 @@
 #  see README for more details
 
 
-import sys, numpy, scipy.stats, math
+import sys
+import math
+
 import netCDF4
+import numpy
+import scipy.stats
 
 
 # cell areas, used for calculating area weighted averages
@@ -35,11 +39,26 @@ def downscale( data, w ):
   return datah
 
 
+def mask_string(data, time_index=-1, threshold_low=-500, threshold_high=500):
+  """Render a coarse mask for debugging coverage, matching the original prints."""
+
+  array = data if data.ndim == 2 else data[time_index]
+  rows, cols = array.shape
+  step_i = max(1, rows // 25)
+  step_j = max(1, cols // 50)
+  s = ""
+  for i in range(rows - 1, 0, -step_i):
+    for j in range(0, cols, step_j):
+      s += "#" if threshold_low < array[i, j] < threshold_high else "."
+    s += "\n"
+  return s
+
+
 # MAIN PROGRAM
 
 # read tas.nc
 nc = netCDF4.Dataset(sys.argv[1], "r")
-print >> sys.stderr, nc.variables.keys()
+print(nc.variables.keys(), file=sys.stderr)
 lats1 = nc.variables["lat"][:]
 lons1 = nc.variables["lon"][:]
 tas = numpy.ma.filled(nc.variables["tas"][:,:,:],-1.0e30)
@@ -47,7 +66,7 @@ nc.close()
 
 # read tos.nc
 nc = netCDF4.Dataset(sys.argv[2], "r")
-print >> sys.stderr, nc.variables.keys()
+print(nc.variables.keys(), file=sys.stderr)
 lats2 = nc.variables["lat"][:]
 lons2 = nc.variables["lon"][:]
 tos = numpy.ma.filled(nc.variables["tos"][:,:,:],-1.0e30)
@@ -56,7 +75,7 @@ nc.close()
 
 # read sic.nc
 nc = netCDF4.Dataset(sys.argv[3], "r")
-print >> sys.stderr, nc.variables.keys()
+print(nc.variables.keys(), file=sys.stderr)
 lats3 = nc.variables["lat"][:]
 lons3 = nc.variables["lon"][:]
 sic = numpy.ma.filled(nc.variables["sic"][:,:,:],-1.0e30)
@@ -64,7 +83,7 @@ nc.close()
 
 # read sftof.nc
 nc = netCDF4.Dataset(sys.argv[4], "r")
-print >> sys.stderr, nc.variables.keys()
+print(nc.variables.keys(), file=sys.stderr)
 lats4 = nc.variables["lat"][:]
 lons4 = nc.variables["lon"][:]
 sftof = numpy.ma.filled(nc.variables["sftof"][:,:],-1.0e30)
@@ -72,7 +91,7 @@ nc.close()
 
 # read CRUTEM land data as mask
 nc = netCDF4.Dataset(sys.argv[5], "r")
-print >> sys.stderr, nc.variables.keys()
+print(nc.variables.keys(), file=sys.stderr)
 lats5 = nc.variables["lat"][:]
 lons5 = nc.variables["lon"][:]
 cvglnd = numpy.ma.filled(nc.variables["temperature_anomaly"][:,:],-1.0e30)
@@ -80,7 +99,7 @@ nc.close()
 
 # read HadSST ocean data as mask
 nc = netCDF4.Dataset(sys.argv[6], "r")
-print >> sys.stderr, nc.variables.keys()
+print(nc.variables.keys(), file=sys.stderr)
 lats6 = nc.variables["lat"][:]
 lons6 = nc.variables["lon"][:]
 cvgsst = numpy.ma.filled(nc.variables["sst"][:,:],-1.0e30)
@@ -94,9 +113,9 @@ nc.close()
 #nc.close()
 
 
-print >> sys.stderr, tas.shape
-print >> sys.stderr, tos.shape
-print >> sys.stderr, sftof.shape
+print(tas.shape, file=sys.stderr)
+print(tos.shape, file=sys.stderr)
+print(sftof.shape, file=sys.stderr)
 
 tas[tas<-500] = -1.0e30
 tas[tas> 500] = -1.0e30
@@ -104,8 +123,8 @@ tos[tos<-500] = -1.0e30
 tos[tos> 500] = -1.0e30
 
 # dates
-dates = (numpy.arange(tas.shape[0])+0.5)/12.0 + y0
-print >> sys.stderr, dates
+dates = (numpy.arange(tas.shape[0]) + 0.5) / 12.0 + y0
+print(dates, file=sys.stderr)
 
 # force missing cells to be open water/land and scale if stored as percentage
 sic[sic<  0.0] = 0.0
@@ -116,29 +135,13 @@ sftof[sftof<  0.0] = 0.0
 sftof[sftof>100.0] = 0.0
 if numpy.max(sftof)>90.0: sftof = 0.01*sftof
 
-print >> sys.stderr, "sftof ", numpy.min(sftof), numpy.max(sftof), numpy.mean(sftof)
+print("sftof ", numpy.min(sftof), numpy.max(sftof), numpy.mean(sftof), file=sys.stderr)
 
 # print tos mask
-s = ""
-for i in range(tos.shape[1]-1,0,-tos.shape[1]/25):
-  for j in range(0,tos.shape[2],tos.shape[2]/50):
-    s += "#" if 100 < tos[-1,i,j] < 500 else "."
-  s += "\n"
-print >> sys.stderr, s, "\n"
-# print cvg mask
-s = ""
-for i in range(cvglnd.shape[1]-1,0,-cvglnd.shape[1]/25):
-  for j in range(0,cvglnd.shape[2],cvglnd.shape[2]/50):
-    s += "#" if -500 < cvglnd[-1,i,j] < 500 else "."
-  s += "\n"
-print >> sys.stderr, s, "\n"
-# print cvg mask
-s = ""
-for i in range(cvgsst.shape[1]-1,0,-cvgsst.shape[1]/25):
-  for j in range(0,cvgsst.shape[2],cvgsst.shape[2]/50):
-    s += "#" if -500 < cvgsst[-1,i,j] < 500 else "."
-  s += "\n"
-print >> sys.stderr, s, "\n"
+print(mask_string(tos, threshold_low=100), "\n", file=sys.stderr)
+# print coverage masks
+print(mask_string(cvglnd), "\n", file=sys.stderr)
+print(mask_string(cvgsst), "\n", file=sys.stderr)
 
 
 # set baseline period
@@ -162,9 +165,9 @@ tos[numpy.isnan(tos)] = -1.0e30
 # eliminate ice cells from tos
 tos[sic>0.05] = -1.0e30
 
-print >> sys.stderr, norm
-print >> sys.stderr, tos[-1,:,:]
-print >> sys.stderr, tos.dtype
+print(norm, file=sys.stderr)
+print(tos[-1,:,:], file=sys.stderr)
+print(tos.dtype, file=sys.stderr)
 
 # trim tas to land cover
 taslnd = tas.copy()
@@ -177,7 +180,7 @@ a = areas(sftof.shape[0])
 for i in range(w.shape[0]):
   for j in range(w.shape[1]):
     w[i,j] = a[i]
-print >> sys.stderr, w
+print(w, file=sys.stderr)
 
 
 # downscale
@@ -193,27 +196,12 @@ for i in range(sftofh.shape[0]):
 sftofh[ numpy.logical_and(sftofh>0.75,sftofh<1.0) ] = 0.75
 
 # print tosh mask
-print >> sys.stderr, "DOWNSCALED"
-s = ""
-for i in range(tash.shape[1]-1,0,-tash.shape[1]/25):
-  for j in range(0,tash.shape[2],tash.shape[2]/50):
-    s += "#" if -500 < tash[-1,i,j] < 500 else "."
-  s += "\n"
-print >> sys.stderr, s, "\n"
-s = ""
-for i in range(tosh.shape[1]-1,0,-tosh.shape[1]/25):
-  for j in range(0,tosh.shape[2],tosh.shape[2]/50):
-    s += "#" if -500 < tosh[-1,i,j] < 500 else "."
-  s += "\n"
-print >> sys.stderr, s, "\n"
-s = ""
-for i in range(tashlnd.shape[1]-1,0,-tashlnd.shape[1]/25):
-  for j in range(0,tashlnd.shape[2],tashlnd.shape[2]/50):
-    s += "#" if -500 < tashlnd[-1,i,j] < 500 else "."
-  s += "\n"
-print >> sys.stderr, s, "\n"
+print("DOWNSCALED", file=sys.stderr)
+print(mask_string(tash), "\n", file=sys.stderr)
+print(mask_string(tosh), "\n", file=sys.stderr)
+print(mask_string(tashlnd), "\n", file=sys.stderr)
 
-print >> sys.stderr, "BLEND"
+print("BLEND", file=sys.stderr)
 
 # blend
 tsha = numpy.zeros([tash.shape[0],36,72], numpy.float32)
@@ -239,37 +227,15 @@ for m in range(tash.shape[0]):
         tshb[m,i,j] = -1.0e30
 
 # print land mask
-print >> sys.stderr, "sftofh"
-s = ""
-for i in range(sftofh.shape[0]-1,0,-sftofh.shape[0]/25):
-  for j in range(0,sftofh.shape[1],sftofh.shape[1]/50):
-    s += "#" if sftofh[i,j] < 0.5 else "."
-  s += "\n"
-print >> sys.stderr, s, "\n"
-# print cvg mask
-print >> sys.stderr, "tash"
-s = ""
-for i in range(tash.shape[1]-1,0,-tash.shape[1]/25):
-  for j in range(0,tash.shape[2],tash.shape[2]/50):
-    s += "#" if -500 < tash[-1,i,j] < 500 else "."
-  s += "\n"
-print >> sys.stderr, s, "\n"
-# print cvg mask
-print >> sys.stderr, "tosh"
-s = ""
-for i in range(tosh.shape[1]-1,0,-tosh.shape[1]/25):
-  for j in range(0,tosh.shape[2],tosh.shape[2]/50):
-    s += "#" if -500 < tosh[-1,i,j] < 500 else "."
-  s += "\n"
-print >> sys.stderr, s, "\n"
-# print cvg mask
-print >> sys.stderr, "tsha"
-s = ""
-for i in range(tsha.shape[1]-1,0,-tsha.shape[1]/25):
-  for j in range(0,tsha.shape[2],tsha.shape[2]/50):
-    s += "#" if -500 < tsha[-1,i,j] < 500 else "."
-  s += "\n"
-print >> sys.stderr, s, "\n"
+print("sftofh", file=sys.stderr)
+print(mask_string(sftofh, time_index=0, threshold_high=0.5), "\n", file=sys.stderr)
+# print cvg masks
+print("tash", file=sys.stderr)
+print(mask_string(tash), "\n", file=sys.stderr)
+print("tosh", file=sys.stderr)
+print(mask_string(tosh), "\n", file=sys.stderr)
+print("tsha", file=sys.stderr)
+print(mask_string(tsha), "\n", file=sys.stderr)
 
 # calculate area weights
 w = numpy.zeros_like(sftofh)
@@ -277,7 +243,7 @@ a = areas(sftofh.shape[0])
 for i in range(w.shape[0]):
   for j in range(w.shape[1]):
     w[i,j] = a[i]
-print >> sys.stderr, w
+print(w, file=sys.stderr)
 
 # calculate temperatures
 for m in range(tsha.shape[0]):
@@ -298,7 +264,7 @@ for m in range(tsha.shape[0]):
   sbs = numpy.sum( wb[18:36,:] )
   tbs = numpy.sum( wb[18:36,:] * tshb[m,18:36,:] ) / sbs
   tb = 0.5*(tbn+tbs)
-  print dates[m], ta, tb, tb-ta
+  print(dates[m], ta, tb, tb-ta)
 #  sc = numpy.sum( wb[0:36,:] )
 #  tc = numpy.sum( wb[0:36,:] * tshb[m,0:36,:] ) / sc
 #  print dates[m], ta, tb, tc-ta, tb-ta, tbn, tbs, sbn, sbs
